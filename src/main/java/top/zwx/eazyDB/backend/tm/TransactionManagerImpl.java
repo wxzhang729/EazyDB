@@ -12,7 +12,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 
-public class TransactionManagerImpl {
+public class TransactionManagerImpl implements TransactionManager {
     //XID文件头长度
     static final int LEN_XID_HEADER_LENGTH = 8;
     //每个事务的占用长度
@@ -67,5 +67,106 @@ public class TransactionManagerImpl {
     // 根据事务xid取得其在xid文件中对应的位置
     private long getXidPosition(long xid) {
         return LEN_XID_HEADER_LENGTH + (xid-1)*XID_FIELD_SIZE;
+    }
+
+    //开启一个事务，返回XID
+    public long begin(){
+        counterLock.lock();
+        try {
+            long xid = xidCounter + 1;
+            updateXID(xid, FIELD_TRAN_ACTIVE);
+            incrXIDCounter();
+            return xid;
+        } finally {
+            counterLock.unlock();
+        }
+    }
+
+    //将XID加1，并更新XID header
+    private void incrXIDCounter() {
+        xidCounter++;
+        ByteBuffer buf = ByteBuffer.wrap(Parser.long2Byte(xidCounter));
+        try{
+            fc.position(0);
+            fc.write(buf);
+        } catch (IOException e) {
+            Panic.panic(e);
+        }
+        try {
+            //强制同步到磁盘，只同步文件内容
+            fc.force(false);
+        } catch (IOException e) {
+            Panic.panic(e);
+        }
+    }
+
+    //更新xid事务的状态为status
+    private void updateXID(long xid, byte status){
+        long offset = getXidPosition(xid);
+        byte[] tmp = new byte[XID_FIELD_SIZE];
+        tmp[0] = status;
+        ByteBuffer buf = ByteBuffer.wrap(tmp);
+        try{
+            fc.position(offset);
+            fc.write(buf);
+        } catch (IOException e) {
+            Panic.panic(e);
+        }
+        try {
+            fc.force(false);
+        } catch (IOException e) {
+            Panic.panic(e);
+        }
+    }
+
+    //检测XID事务是否处于status状态
+    private boolean checkXID(long xid, byte status){
+        long offset = getXidPosition(xid);
+        ByteBuffer buf = ByteBuffer.wrap(new byte[XID_FIELD_SIZE]);
+        try {
+            fc.position(offset);
+            fc.read(buf);
+        } catch (IOException e) {
+            Panic.panic(e);
+        }
+        return buf.array()[0] == status;
+    }
+
+    //提交XID事务
+    public void commit(long xid){
+        updateXID(xid, FIELD_TRAN_COMMITTED);
+    }
+
+    //取消XID事务
+    public void abort(long xid){
+        updateXID(xid, FIELD_TRAN_ABORTED);
+    }
+
+    //判断XID事务是否在运行
+    public boolean isActive(long xid){
+        if(xid == SUPER_XID) return false;
+        return checkXID(xid, FIELD_TRAN_ACTIVE);
+    }
+
+    //判断XID事务是否提交
+    public boolean isCommitted(long xid){
+        if(xid == SUPER_XID) return true;
+        return checkXID(xid, FIELD_TRAN_COMMITTED);
+    }
+
+    ////判断XID事务是否取消
+    public boolean isAborted(long xid){
+        if(xid == SUPER_XID) return false;
+        return checkXID(xid, FIELD_TRAN_ABORTED);
+    }
+
+    //关闭通道
+    public void close(){
+        try {
+            fc.close();
+            file.close();
+        }catch (IOException e){
+            Panic.panic(e);
+        }
     }
 }
