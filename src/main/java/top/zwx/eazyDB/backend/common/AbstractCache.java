@@ -1,4 +1,6 @@
-package top.zwx.eazyDB.common;
+package top.zwx.eazyDB.backend.common;
+
+import top.zwx.eazyDB.common.Error;
 
 import java.util.HashMap;
 import java.util.Set;
@@ -54,7 +56,7 @@ public abstract class AbstractCache<T> {
             }
             count++;
             getting.put(key, true);
-            lock.lock();
+            lock.unlock();
             break;
         }
         T obj = null;
