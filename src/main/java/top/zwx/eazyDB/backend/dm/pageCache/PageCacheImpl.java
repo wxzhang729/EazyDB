@@ -75,6 +75,13 @@ public class PageCacheImpl extends AbstractCache<Page> implements PageCache{
         }
     }
 
+    public int newPage(byte[] initData){
+        int pgno = pageNumbers.incrementAndGet();
+        Page pg = new PageImpl(pgno,initData,this);
+        flush(pg);      //新建的页面需要写回到磁盘
+        return pgno;
+    }
+//
     private void flush(Page pg){
         int pgno = pg.getPageNumber();
         long offset = pageOffset(pgno);
