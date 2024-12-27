@@ -81,7 +81,7 @@ public class PageCacheImpl extends AbstractCache<Page> implements PageCache{
         flush(pg);      //新建的页面需要写回到磁盘
         return pgno;
     }
-//
+    //这个方法用于将页面写回到磁盘
     private void flush(Page pg){
         int pgno = pg.getPageNumber();
         long offset = pageOffset(pgno);
