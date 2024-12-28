@@ -76,7 +76,7 @@ public class PageCacheImpl extends AbstractCache<Page> implements PageCache{
     }
 
     public int newPage(byte[] initData){
-        int pgno = pageNumbers.incrementAndGet();
+        int pgno = pageNumbers.incrementAndGet();   //记录当前数据库文件的页数
         Page pg = new PageImpl(pgno,initData,this);
         flush(pg);      //新建的页面需要写回到磁盘
         return pgno;
