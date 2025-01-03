@@ -81,6 +81,7 @@ public class PageCacheImpl extends AbstractCache<Page> implements PageCache{
         flush(pg);      //新建的页面需要写回到磁盘
         return pgno;
     }
+
     //这个方法用于将页面写回到磁盘
     private void flush(Page pg){
         int pgno = pg.getPageNumber();
@@ -101,5 +102,49 @@ public class PageCacheImpl extends AbstractCache<Page> implements PageCache{
 
     private static long pageOffset(int pgno) {
         return (pgno - 1) * PAGE_SIZE;
+    }
+
+    @Override
+    public Page getPage(int pgno) throws Exception {
+        return get((long)pgno);
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        try{
+            fc.close();
+            file.close();
+        }catch (IOException e){
+            Panic.panic(e);
+        }
+    }
+
+    @Override
+    public int getPageNumber() {
+        return pageNumbers.intValue();
+    }
+
+    //通过截断文件来限制数据库文件的大小
+    //truncateByBgno(100);  // 保留前 100 页的数据，截断文件到第 101 页
+    @Override
+    public void truncateByBgno(int maxPgno) {
+        long size = pageOffset(maxPgno+1);
+        try{
+            file.setLength(size);
+        }catch (IOException e){
+            Panic.panic(e);
+        }
+        pageNumbers.set(maxPgno);
+    }
+
+    @Override
+    public void release(Page page) {
+        release((long)page.getPageNumber());
+    }
+
+    @Override
+    public void flushPage(Page pg) {
+        flush(pg);
     }
 }

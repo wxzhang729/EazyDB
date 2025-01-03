@@ -6,7 +6,7 @@ import javax.xml.crypto.Data;
 import java.util.Arrays;
 
 /**
- * 用于特殊管理数据的第一页
+ * 用于特殊管理数据的第一页，用于存储元数据，启动检查等
  * ValidCheck
  * db启动时给100~107字节处填入一串随机字节，db关闭时将其拷贝到108~115字节
  * 用于判断上一次数据是否正常关闭

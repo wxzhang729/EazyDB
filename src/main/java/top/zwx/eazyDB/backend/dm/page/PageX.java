@@ -6,7 +6,8 @@ import top.zwx.eazyDB.backend.utils.Parser;
 import java.util.Arrays;
 
 /**
- * PageX管理普通页
+ * PageX管理普通页，前面有2个字节用于记录页面的偏移量
+ * 即下次存储数据从哪个位置开始
  * 普通页结构
  */
 public class PageX {
