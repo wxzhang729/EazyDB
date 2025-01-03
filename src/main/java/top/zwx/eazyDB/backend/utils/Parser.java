@@ -2,6 +2,10 @@ package top.zwx.eazyDB.backend.utils;
 
 import java.nio.ByteBuffer;
 
+/**
+ *  1.用于将整数类型的数据序列化成字节数组，方便写入文件、网络传输或日志存储。
+ *  2.将字节数组转化为整数类型
+ */
 public class Parser {
     public static int parseInt(byte[] buf) {
         ByteBuffer buffer = ByteBuffer.wrap(buf, 0, 4);
@@ -21,5 +25,9 @@ public class Parser {
     public static short parseShort(byte[] buf) {
         ByteBuffer buffer = ByteBuffer.wrap(buf, 0, 2);
         return buffer.getShort();
+    }
+
+    public static byte[] int2Byte(int value) {
+        return ByteBuffer.allocate(Integer.SIZE / Byte.SIZE).putInt(value).array();
     }
 }

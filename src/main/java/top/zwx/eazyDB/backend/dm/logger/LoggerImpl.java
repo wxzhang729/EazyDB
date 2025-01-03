@@ -12,6 +12,8 @@ import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import com.google.common.primitives.Bytes;
+
 /**
  * 日志文件读写
  *
@@ -38,7 +40,7 @@ public class LoggerImpl implements Logger {
 
     private long position;          //当前日志指针的位置
     private long fileSize;          //初始化时记录，log操作不更新
-    private long xChecksum;         //校验和
+    private int xChecksum;         //校验和
 
     LoggerImpl(RandomAccessFile raf, FileChannel fc, int xChecksum){
         this.file = raf;
@@ -97,13 +99,15 @@ public class LoggerImpl implements Logger {
         if(checkSum1 != checkSum2){
             return null;
         }
+        //将指针指向下一个日志起始位置
         position += log.length;
+        //返回整个日志
         return log;
     }
 
     //检查并移除bad tail
     private void checkAndRemoveTail(){
-        rewind();
+        rewind();       //将文件指针移动到日志文件的起始位置（跳过文件头部的 xChecksum 部分）
 
         int xCheck = 0;
         while(true){
@@ -123,6 +127,7 @@ public class LoggerImpl implements Logger {
             Panic.panic(e);
         }
         try{
+            //重置文件指针到有效日志的结束位置，防止后续写操作发生错误
             file.seek(position);
         }catch (IOException e){
             Panic.panic(e);
@@ -130,10 +135,50 @@ public class LoggerImpl implements Logger {
         rewind();
     }
 
+    /**
+     * 向日志文件写入日志时，也是首先将数据包裹成日志格式，写入文件后，再更新文件的校验和，更新校验和时，会刷新缓冲区，保证内容写入磁盘。
+     * @param data
+     */
+    @Override
+    public void log(byte[] data) {
+        byte[] log = wrapLog(data);
+        ByteBuffer buf = ByteBuffer.wrap(log);
+        lock.lock();
+        try{
+            fc.position(fc.size());
+            fc.write(buf);
+        }catch (IOException e){
+            Panic.panic(e);
+        }finally {
+            lock.unlock();
+        }
+        updateXChecksum(log);
+    }
+
+    //更新日志文件的全局校验和
+    private void updateXChecksum(byte[] log){
+        this.xChecksum = calChecksum(this.xChecksum, log);
+        try{
+            fc.position(0);
+            fc.write(ByteBuffer.wrap(Parser.int2Byte(xChecksum)));  //将字节数组包装为ByteBuffer对象
+            fc.force(false);
+        }catch (IOException e){
+            Panic.panic(e);
+        }
+    }
+
+    //将一条日志数据（data）封装成一个完整的日志条目
+    private byte[] wrapLog(byte[] data) {
+        byte[] checksum = Parser.int2Byte(calChecksum(0,data));
+        byte[] size = Parser.int2Byte(data.length);
+        return Bytes.concat(size,checksum,data);
+    }
+
     @Override
     public void truncate(long x) throws IOException {
         lock.lock();
         try{
+            //调用 truncate() 方法，将文件截断到指定长度（x），文件中超出该长度的部分将被删除
             fc.truncate(x);
         }finally {
             lock.unlock();
