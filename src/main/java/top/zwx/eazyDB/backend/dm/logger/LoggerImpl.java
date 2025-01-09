@@ -189,4 +189,18 @@ public class LoggerImpl implements Logger {
     public void rewind() {
         position = 4;
     }
+
+    @Override
+    public byte[] next() {
+        lock.lock();
+        try{
+            byte[] log = internNext();
+            if(log == null){
+                return null;
+            }
+            return Arrays.copyOfRange(log,OF_DATA,log.length);
+        }finally {
+            lock.unlock();
+        }
+    }
 }
