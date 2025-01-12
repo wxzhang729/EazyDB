@@ -1,5 +1,6 @@
 package top.zwx.eazyDB.backend.dm.page;
 
+import top.zwx.eazyDB.backend.dm.pageCache.PageCache;
 import top.zwx.eazyDB.backend.utils.RandomUtil;
 
 import javax.xml.crypto.Data;
@@ -52,4 +53,11 @@ public class PageOne {
     private static boolean checkVc(byte[] raw){
         return Arrays.equals(Arrays.copyOfRange(raw, OF_VC, LEN_VC + OF_VC), Arrays.copyOfRange(raw, OF_VC+LEN_VC, 2*LEN_VC+OF_VC));
     }
+
+    public static byte[] InitRaw(){
+        byte[] raw = new byte[PageCache.PAGE_SIZE];
+        setVcOpen(raw);
+        return raw;
+    }
+
 }

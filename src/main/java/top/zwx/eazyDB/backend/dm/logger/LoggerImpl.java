@@ -34,6 +34,8 @@ public class LoggerImpl implements Logger {
     private static final int OF_CHECKSUM = OF_SIZE + 4;         //checksum的偏移量从size+4开始
     private static final int OF_DATA = OF_CHECKSUM + 4;         //data偏移量从Checksum+4开始
 
+    public static final String LOG_SUFFIX = ".log";
+
     private RandomAccessFile file;
     private FileChannel fc;
     private Lock lock;
@@ -201,6 +203,16 @@ public class LoggerImpl implements Logger {
             return Arrays.copyOfRange(log,OF_DATA,log.length);
         }finally {
             lock.unlock();
+        }
+    }
+
+    @Override
+    public void close() {
+        try{
+            fc.close();
+            file.close();
+        }catch (IOException e){
+            Panic.panic(e);
         }
     }
 }

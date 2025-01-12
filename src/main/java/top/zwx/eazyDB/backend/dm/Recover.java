@@ -1,5 +1,7 @@
 package top.zwx.eazyDB.backend.dm;
 
+import com.google.common.primitives.Bytes;
+import top.zwx.eazyDB.backend.common.SubArray;
 import top.zwx.eazyDB.backend.dm.dataItem.DataItem;
 import top.zwx.eazyDB.backend.dm.logger.Logger;
 import top.zwx.eazyDB.backend.dm.page.Page;
@@ -48,6 +50,14 @@ public class Recover {
     private static final int OF_XID = OF_TYPE + 1;                  //代表事务 ID（XID）字段的起始位置。占8字节
     private static final int OF_UPDATE_UID = OF_XID + 8;           //代表更新操作的唯一标识符（UID）字段的起始位置。占8字节
     private static final int OF_UPDATE_RAW = OF_UPDATE_UID + 8;    //代表旧值（OldRaw）和新值（NewRaw）字段的起始位置。
+
+    public static byte[] insertLog(long xid, Page pg, byte[] raw){
+        byte[] logTypeRaw = {LOG_TYPE_INSERT};
+        byte[] xidRaw = Parser.long2Byte(xid);
+        byte[] pgnoRaw = Parser.int2Byte(pg.getPageNumber());
+        byte[] offsetRaw = Parser.short2Byte(PageX.getFSO(pg));
+        return Bytes.concat(logTypeRaw, xidRaw, xidRaw, offsetRaw, offsetRaw, raw);
+    }
 
     //撤销（UNDO）事务，将所有处于 未完成状态（active） 的事务所做的操作回滚
     private static void undoTransactions(TransactionManager tm, Logger lg, PageCache pc){
@@ -151,6 +161,16 @@ public class Recover {
         }finally {
             pg.release();
         }
+    }
+
+    public static byte[] updateLog(long xid, DataItem di){
+        byte[] logType = {LOG_TYPE_INSERT};
+        byte[] xidRaw = Parser.long2Byte(xid);
+        byte[] uidRaw = Parser.long2Byte(di.getUid());
+        byte[] oldRaw = di.getOldRaw();
+        SubArray raw = di.getRaw();
+        byte[] newRaw = Arrays.copyOfRange(raw.raw, raw.start, raw.end);
+        return Bytes.concat(logType, xidRaw, uidRaw, oldRaw, newRaw);
     }
 
     //从 更新日志的字节数组 中解析出插入操作的相关信息
