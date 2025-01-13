@@ -41,7 +41,7 @@ public interface DataItem {
     //从页面的offset处解析出dataitem
     public static DataItem parseDataItem(Page pg, short offset, DataManagerImpl dm) {
         byte[] raw = pg.getData();
-        short size = Parser.parseShort(Arrays.copyOfRange(raw,offset+DataItemImpl.OF_SIZE, offset+DataItemImpl.OF_DATA);
+        short size = Parser.parseShort(Arrays.copyOfRange(raw,offset+DataItemImpl.OF_SIZE, offset+DataItemImpl.OF_DATA));
         short length = (short) (size + DataItemImpl.OF_DATA);
         long uid = Types.addressToUid(pg.getPageNumber(), offset);
         return new DataItemImpl(new SubArray(raw, offset, offset + length), new byte[length] ,pg, uid, dm);

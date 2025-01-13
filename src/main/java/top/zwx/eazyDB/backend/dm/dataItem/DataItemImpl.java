@@ -4,6 +4,7 @@ import top.zwx.eazyDB.backend.common.SubArray;
 import top.zwx.eazyDB.backend.dm.DataManager;
 import top.zwx.eazyDB.backend.dm.DataManagerImpl;
 import top.zwx.eazyDB.backend.dm.Recover;
+import top.zwx.eazyDB.backend.dm.logger.Logger;
 import top.zwx.eazyDB.backend.dm.page.Page;
 
 import java.util.concurrent.locks.Lock;
@@ -113,10 +114,7 @@ public class DataItemImpl implements DataItem {
 
 
 
-    public void logDataItem(long xid, DataItem di) {
-        byte[] log = Recover.updateLog(xid,di);
-        logger.log(log);
-    }
+
 
     public boolean isValid(){
         return raw.raw[raw.start+OF_VALID] == (byte) 0;

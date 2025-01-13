@@ -52,6 +52,7 @@ public class DataManagerImpl extends AbstractCache<DataItem> implements DataMana
         }
     }
 
+    //为xid生成update日志
     public void logDataItem(long xid, DataItem di){
         byte[] log = Recover.updateLog(xid, di);
         logger.log(log);
