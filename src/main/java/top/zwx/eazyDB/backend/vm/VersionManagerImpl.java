@@ -43,7 +43,7 @@ public class VersionManagerImpl extends AbstractCache<Entry> implements VersionM
                 return null;
             }
         }finally {
-            entry.release;
+            entry.release();
         }
     }
 }
