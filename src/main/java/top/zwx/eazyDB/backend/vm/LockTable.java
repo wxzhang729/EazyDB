@@ -156,6 +156,7 @@ public class LockTable {
     }
 
     // 从等待队列中选择一个xid来占用uid
+    //移除当前资源id
     private void selectNewXID(long uid) {
         u2x.remove(uid); // 从u2x映射中移除当前资源ID
         List<Long> l = wait.get(uid); // 从wait映射中获取当前资源ID的等待队列

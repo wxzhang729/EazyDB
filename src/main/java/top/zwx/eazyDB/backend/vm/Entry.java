@@ -33,7 +33,7 @@ public class Entry {
         return entry;
     }
 
-    public static Entry loadEntry(VersionManager vm, long uid, DataItem dataItem) {
+    public static Entry loadEntry(VersionManager vm, long uid) throws Exception {
         DataItem di = ((VersionManagerImpl)vm).dm.read(uid);
         return newEntry(vm, di,uid);
     }
@@ -90,5 +90,13 @@ public class Entry {
         }finally {
             dataItem.rUnLock();
         }
+    }
+
+    public void release(){
+        ((VersionManagerImpl)vm).releaseEntry(this);
+    }
+
+    public long getUid(){
+        return uid;
     }
 }
